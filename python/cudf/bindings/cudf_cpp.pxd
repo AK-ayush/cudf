@@ -161,6 +161,9 @@ cdef extern from "cudf.h" nogil:
     ctypedef struct  gdf_segmented_radixsort_plan_type:
         pass
 
+    ctypedef struct DLManagedTensor_:
+        pass
+
     ctypedef enum order_by_type:
         GDF_ORDER_ASC,
         GDF_ORDER_DESC
@@ -714,4 +717,14 @@ cdef extern from "cudf.h" nogil:
     cdef gdf_error gdf_digitize(gdf_column* col,
                                 gdf_column* bins,
                                 bool right,
-                                gdf_index_type* out_indices);
+                                gdf_index_type* out_indices)
+
+
+    cdef gdf_error gdf_from_dlpack(gdf_column** columns,
+                                gdf_size_type *num_columns,
+                                DLManagedTensor_ const * tensor)
+
+
+    cdef gdf_error gdf_to_dlpack(DLManagedTensor_ *tensor,
+                                gdf_column const * const * columns,
+                                gdf_size_type num_columns);

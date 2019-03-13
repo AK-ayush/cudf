@@ -2168,6 +2168,38 @@ class DataFrame(object):
             df.index.name = new_index_name
         return df
 
+    def to_dlpack(self):
+        """Convert to a DLPack DLTensor
+
+        Returns
+        -------
+        DLPack Tensor
+        """
+
+    @classmethod
+    def from_dlpack(self, tensor, index=None, columns=None):
+        """Convert from DLPack DLTensor.
+
+        Parameters
+        ----------
+        tensor : The input DLPack DLTensor
+        index : str
+            The name of the index column in *tensor*.
+            If None, the default index is used.
+        columns : list of str
+            List of column names to include.
+
+        Returns
+        -------
+        DataFrame
+        """
+        import cupy
+
+        cx = cupy.fromDlpack(tensor)
+        # df_cols = call the pyx function (tensor, cx.shape[1], cx.dtype)
+        df = DataFrame()
+        return df
+
     def to_records(self, index=True):
         """Convert to a numpy recarray
 
