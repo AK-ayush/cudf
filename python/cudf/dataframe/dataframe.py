@@ -265,7 +265,7 @@ class DataFrame(object):
                                            .masked_assign(value=col, mask=mask)
 
         elif name in self._cols:
-            self._cols[name] = self._prepare_series_for_add(col)
+            self._cols[name] = self._prepare_series_for_add(col, name)
         else:
             self.add_column(name, col)
 
@@ -736,11 +736,11 @@ class DataFrame(object):
         series = Series(col)
         if len(self) == 0 and len(self.columns) > 0 and len(series) > 0:
             ind = series.index
-            arr = rmm.device_array(shape=len(ind), dtype=np.float64)
-            size = utils.calc_chunk_size(arr.size, utils.mask_bitsize)
-            mask = cudautils.zeros(size, dtype=utils.mask_dtype)
-            val = Series.from_masked_array(arr, mask, null_count=len(ind))
-            for name in self._cols:
+            for name, sr in self._cols.items():
+                arr = rmm.device_array(shape=len(ind), dtype=sr.dtype)
+                size = utils.calc_chunk_size(arr.size, utils.mask_bitsize)
+                mask = cudautils.zeros(size, dtype=utils.mask_dtype)
+                val = Series.from_masked_array(arr, mask, null_count=len(ind))
                 self._cols[name] = val
             self._index = series.index
             self._size = len(series)
@@ -768,7 +768,7 @@ class DataFrame(object):
             raise ValueError('Length of values does not match index length')
         return col
 
-    def _prepare_series_for_add(self, col, forceindex=False):
+    def _prepare_series_for_add(self, col, name=None, forceindex=False):
         """Prepare a series to be added to the DataFrame.
 
         Parameters
@@ -784,7 +784,11 @@ class DataFrame(object):
         col = self._sanitize_values(col)
 
         empty_index = len(self._index) == 0
-        series = Series(col)
+        if name in self._cols and len(col)==0:
+            dtype = self._cols[name].dtype
+        else:
+            dtype = None
+        series = Series(col, dtype=dtype)
         if forceindex or empty_index or self._index.equals(series.index):
             if empty_index:
                 self._index = series.index
